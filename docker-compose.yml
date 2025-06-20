@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  express_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: express_app
+    ports:
+      - "3000:3000"
+      - "5555:5555"
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://postgres:123456@postgres:5432/mydb
+      - NODE_ENV=development
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
