@@ -8,6 +8,7 @@ const router = express.Router();
 router.get('/', jobController.getAllJobs);
 router.get('/:id', jobController.getJobById);
 router.post('/:id/image', upload.single('image'), jobController.uploadJobImage);
-router.post('/', protect, jobController.createJob);
+router.post('/', protect, upload.single('image'), jobController.createJob);
+router.delete('/:id', protect, jobController.deleteJob);
 
 module.exports = router; 

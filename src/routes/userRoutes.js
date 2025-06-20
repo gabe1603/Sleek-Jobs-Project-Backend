@@ -58,4 +58,7 @@ router.post('/:id/avatar', protect, upload.single('avatar'), userController.uplo
 // Rota para buscar todas as vagas criadas por um usuário
 router.get('/:userId/jobs', jobController.getJobsByCreator);
 
+// Rota para editar informações do usuário (email, name, abn)
+router.patch('/:userId', protect, userController.updateUserById);
+
 module.exports = router; 

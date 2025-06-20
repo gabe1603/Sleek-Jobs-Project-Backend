@@ -2,6 +2,7 @@ const { prisma } = require('../config/prisma');
 const { AppError } = require('../middlewares/errorHandler');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const logger = require('../utils/logger');
 
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -196,5 +197,38 @@ exports.uploadAvatar = async (req, res, next) => {
     res.json({ url: avatarPath });
   } catch (error) {
     next(error);
+  }
+};
+
+// Atualiza informações do usuário pelo ID
+exports.updateUserById = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    logger.log('Requisição PATCH /api/users/:userId', { userId, body: req.body, userAuth: req.user });
+    // Permitir apenas o próprio usuário ou admin editar
+    if (req.user.id !== userId && req.user.role !== 'ADMIN') {
+      logger.log('Acesso negado para userId:', req.user.id);
+      return res.status(403).json({ error: 'Acesso negado' });
+    }
+    const data = {};
+    if (req.body.name) data.name = req.body.name;
+    if (req.body.email) data.email = req.body.email;
+    // Só permite editar abn se for EMPLOYER
+    if (req.body.abn && req.user.role && req.user.role.toUpperCase() === 'EMPLOYER') {
+      data.abn = req.body.abn;
+    }
+    logger.log('Dados para update:', data);
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data
+    });
+    logger.log('Usuário atualizado:', user);
+    res.json(user);
+  } catch (error) {
+    logger.error('Erro ao atualizar usuário:', error);
+    if (error instanceof Error && error.stack) {
+      logger.error('Stack trace:', error.stack);
+    }
+    res.status(500).json({ error: 'Erro ao atualizar usuário', details: error.message });
   }
 }; 
