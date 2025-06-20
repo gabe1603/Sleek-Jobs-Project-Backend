@@ -12,7 +12,14 @@ const signToken = (id) => {
 
 exports.register = async (req, res, next) => {
   try {
-    const { email, password, name, role } = req.body;
+    const { email, password, name } = req.body;
+    let { role } = req.body;
+    // Validação e normalização do role
+    const allowedRoles = ['admin', 'employer', 'student'];
+    role = (role || 'student').toLowerCase();
+    if (!allowedRoles.includes(role)) {
+      return next(new AppError('Role inválida. Use admin, employer ou student.', 400));
+    }
 
     // Verificar se o usuário já existe
     const existingUser = await prisma.user.findUnique({
@@ -32,7 +39,7 @@ exports.register = async (req, res, next) => {
         email,
         password: hashedPassword,
         name,
-        role: role || 'CANDIDATE'
+        role
       }
     });
 
@@ -157,8 +164,10 @@ exports.getUserCompany = async (req, res, next) => {
 
 // Retorna os dados do usuário pelo ID
 exports.getUserById = async (req, res, next) => {
+  logger.log('GET /api/users/:userId called', { params: req.params, userAuth: req.user });
   try {
     const { userId } = req.params;
+    logger.log('Buscando usuário por ID:', userId);
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -173,11 +182,14 @@ exports.getUserById = async (req, res, next) => {
         updatedAt: true
       }
     });
+    logger.log('Resultado da busca:', user);
     if (!user) {
+      logger.log('Usuário não encontrado para ID:', userId);
       return res.status(404).json({ error: 'Usuário não encontrado.' });
     }
     res.json(user);
   } catch (error) {
+    logger.error('Erro ao buscar usuário por ID:', error);
     next(error);
   }
 };
@@ -230,5 +242,30 @@ exports.updateUserById = async (req, res, next) => {
       logger.error('Stack trace:', error.stack);
     }
     res.status(500).json({ error: 'Erro ao atualizar usuário', details: error.message });
+  }
+};
+
+exports.getAllUsers = async (req, res, next) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatar: true,
+        companyId: true,
+        abn: true,
+        skills: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+    res.json(users);
+  } catch (error) {
+    next(error);
   }
 }; 

@@ -29,6 +29,7 @@ exports.getUserApplications = async (req, res) => {
         job: {
           select: {
             title: true,
+            image: true,
             company: { select: { name: true } }
           }
         }

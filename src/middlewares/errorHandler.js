@@ -17,19 +17,19 @@ const errorHandler = (err, req, res, next) => {
   err.status = err.status || 'error';
 
   if (process.env.NODE_ENV === 'development') {
-    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    if (Prisma && Prisma.PrismaClientKnownRequestError && err instanceof Prisma.PrismaClientKnownRequestError) {
       return res.status(400).json({
         status: 'error',
-        message: 'Erro no banco de dados',
+        message: 'Database error',
         error: err.message,
         stack: err.stack
       });
     }
 
-    if (err instanceof ValidationError) {
+    if (typeof ValidationError === 'function' && err instanceof ValidationError) {
       return res.status(400).json({
         status: 'error',
-        message: 'Erro de validação',
+        message: 'Validation error',
         errors: err.array()
       });
     }
@@ -42,7 +42,7 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Produção
+  // Production
   if (err.isOperational) {
     return res.status(err.statusCode).json({
       status: err.status,
@@ -50,11 +50,11 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Erros de programação: não vazar detalhes do erro
+  // Programming or unknown errors: don't leak error details
   console.error('ERROR 💥', err);
   return res.status(500).json({
     status: 'error',
-    message: 'Algo deu errado!'
+    message: 'Something went wrong!'
   });
 };
 

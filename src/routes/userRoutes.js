@@ -2,7 +2,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const userController = require('../controllers/userController');
 const jobController = require('../controllers/jobController');
-const { protect } = require('../middlewares/auth');
+const { protect, restrictTo } = require('../middlewares/auth');
 const { validateRequest } = require('../middlewares/validateRequest');
 const upload = require('../middlewares/upload');
 
@@ -60,5 +60,7 @@ router.get('/:userId/jobs', jobController.getJobsByCreator);
 
 // Rota para editar informações do usuário (email, name, abn)
 router.patch('/:userId', protect, userController.updateUserById);
+
+router.get('/', protect, restrictTo('admin'), userController.getAllUsers);
 
 module.exports = router; 

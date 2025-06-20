@@ -1,8 +1,8 @@
-# Jobs Board Backend
+# Sleek Jobs Board Backend
 
-Backend para o sistema de Jobs Board desenvolvido com Node.js, Express e Prisma.
+Backend for the Sleek Jobs Board system, built with Node.js, Express, Prisma, and PostgreSQL.
 
-## 🛠️ Tecnologias
+## 🛠️ Technologies
 
 - Node.js
 - Express
@@ -10,55 +10,65 @@ Backend para o sistema de Jobs Board desenvolvido com Node.js, Express e Prisma.
 - Prisma ORM
 - Docker + Docker Compose
 
-## 🚀 Como rodar o projeto
+## 🚀 Getting Started
 
-### 1. Clonar o repositório
+### 1. Clone the repository
 ```bash
-git clone <URL_DO_REPO>
-cd nome-do-projeto
+git clone <REPO_URL>
+cd sleek_aus/back
 ```
 
-### 2. Criar o arquivo .env
-Crie um arquivo `.env` na raiz com:
+### 2. Create the .env file
+Create a `.env` file in the project root with:
 ```env
 DATABASE_URL="postgresql://postgres:123456@postgres:5432/mydb"
+JWT_SECRET="your_jwt_secret"
+JWT_EXPIRES_IN="7d"
+CORS_ORIGIN="http://localhost:3000"
 ```
 
-### 3. Subir o ambiente com Docker Compose
+### 3. Start the environment with Docker Compose
 ```bash
 docker-compose up --build -d
 ```
-Isso irá iniciar:
-- PostgreSQL em localhost:5432
-- API Express em localhost:3000
+This will start:
+- PostgreSQL on localhost:5432
+- Express API on localhost:3000
 
-### 4. Rodar as migrações Prisma (caso necessário)
+### 4. Run Prisma migrations (if needed)
 ```bash
 docker exec -it express_app sh
 npx prisma migrate dev --name init
 ```
 
-## 🧪 Testar a aplicação
-
-Acesse:
-```
-http://localhost:3000
-```
-
-Ou teste a rota de exemplo:
+### 5. (Optional) Open Prisma Studio
 ```bash
-curl http://localhost:3000/users
+docker exec -it express_app sh
+npx prisma studio
 ```
 
-## 🗃️ Estrutura de pastas
+## 🧪 Testing the API
+
+You can access the API at:
 ```
-├── prisma/                  # schema.prisma do banco de dados
+http://localhost:3000/api/health
+```
+
+Or test a sample endpoint:
+```bash
+curl http://localhost:3000/api/jobs
+```
+
+## 📂 Project Structure
+```
+├── prisma/                  # Prisma schema and migrations
 ├── src/
-│   ├── config/              # Arquivos de configuração (Prisma Client)
-│   ├── controllers/         # Lógicas das rotas
-│   ├── middlewares/         # Middlewares como auth, validação, etc
-│   ├── routes/              # Arquivo de rotas Express
-│   └── server.js            # Ponto de entrada da aplicação
+│   ├── config/              # Configuration files (Prisma Client)
+│   ├── controllers/         # Route logic
+│   ├── middlewares/         # Middlewares (auth, validation, etc)
+│   ├── routes/              # Express route files
+│   └── server.js            # App entry point
+├── uploads/                 # Uploaded files (avatars, logos, images)
 ├── .env
 ├── Dockerfile
 ├── docker-compose.yml
@@ -66,75 +76,111 @@ curl http://localhost:3000/users
 └── README.md
 ```
 
-## 📦 Dependências Principais
+## 🔑 API Endpoints (Summary)
 
-- `express`: Framework web
-- `@prisma/client`: ORM para PostgreSQL
-- `bcryptjs`: Hash de senhas
-- `jsonwebtoken`: Autenticação JWT
-- `express-validator`: Validação de dados
-- `cors`: Middleware para CORS
-- `dotenv`: Gerenciamento de variáveis de ambiente
-- `helmet`: Segurança HTTP
-- `morgan`: Logging de requisições
+### Authentication
+- `POST /api/users/register` — Register a new user
+- `POST /api/users/login` — User login
 
-## 🔑 Endpoints da API
+### Users
+- `GET /api/users/profile` — Get authenticated user's profile (requires JWT)
+- `PATCH /api/users/profile` — Update authenticated user's profile (requires JWT)
+- `POST /api/users/:id/avatar` — Upload user avatar (multipart/form-data, requires JWT)
+- `GET /api/users/:userId/company` — Get user's company
+- `GET /api/users/:userId` — Get user by ID (requires JWT)
+- `GET /api/users/:userId/jobs` — List jobs created by user
+- `PATCH /api/users/:userId` — Update user info (admin/self, requires JWT)
+- `GET /api/users` — List all users (admin only, requires JWT)
 
-### Autenticação
-- `POST /api/users/register` - Registro de usuário
-- `POST /api/users/login` - Login
-- `GET /api/users/profile` - Perfil do usuário (requer autenticação)
-- `PATCH /api/users/profile` - Atualizar perfil (requer autenticação)
+### Companies
+- `GET /api/companies/:companyId` — Get company by ID
+- `POST /api/companies` — Create company (multipart/form-data, upload logo, requires JWT)
 
-### Empresas
-- `GET /api/companies` - Listar empresas
-- `POST /api/companies` - Criar empresa (requer autenticação)
-- `GET /api/companies/:id` - Detalhes da empresa
-- `PATCH /api/companies/:id` - Atualizar empresa (requer autenticação)
+### Jobs
+- `GET /api/jobs` — List all jobs
+- `GET /api/jobs/:id` — Get job by ID
+- `POST /api/jobs` — Create job (multipart/form-data, upload image, requires JWT)
+- `POST /api/jobs/:id/image` — Upload job image (multipart/form-data, requires JWT)
+- `DELETE /api/jobs/:id` — Delete job (admin or employer creator, requires JWT)
 
-### Vagas
-- `GET /api/jobs` - Listar vagas
-- `POST /api/jobs` - Criar vaga (requer autenticação)
-- `GET /api/jobs/:id` - Detalhes da vaga
-- `PATCH /api/jobs/:id` - Atualizar vaga (requer autenticação)
-- `DELETE /api/jobs/:id` - Deletar vaga (requer autenticação)
+### Applications
+- `POST /api/applications/:jobId/apply` — Apply to a job (requires JWT)
+- `GET /api/applications/user/:userId` — List applications for a user (requires JWT)
 
-### Candidaturas
-- `POST /api/applications` - Criar candidatura (requer autenticação)
-- `GET /api/applications` - Listar candidaturas (requer autenticação)
-- `PATCH /api/applications/:id` - Atualizar status da candidatura (requer autenticação)
+### Skills
+- `GET /api/skills` — List all skills
+- `GET /api/skills/user/:userId` — List skills for a user
 
-## 💡 Dicas para Desenvolvedores
+### CV
+- `GET /api/cv/:userId` — Get user's CV
+- `POST /api/cv` — Create or update CV (requires JWT)
 
-1. **Variáveis de Ambiente**
-   - Sempre use o arquivo `.env` para configurações sensíveis
-   - Nunca comite o arquivo `.env` no repositório
-   - Use `.env.example` como template
+### Health Check
+- `GET /api/health` — Check API status
 
-2. **Banco de Dados**
-   - Use o Prisma Studio para visualizar dados: `npx prisma studio`
-   - Mantenha as migrações atualizadas: `npx prisma migrate dev`
-   - Gere o cliente Prisma após alterações: `npx prisma generate`
+## 📤 File Uploads
+- **User avatar:** `POST /api/users/:id/avatar` (field: `avatar`)
+- **Company logo:** `POST /api/companies` (field: `logo`)
+- **Job image:** `POST /api/jobs` or `POST /api/jobs/:id/image` (field: `image`)
+- All uploads use `multipart/form-data`.
+- Uploaded files are served at `/uploads/<filename>`.
 
-3. **Desenvolvimento**
-   - Use `npm run dev` para desenvolvimento com hot-reload
-   - Mantenha os logs ativos para debug
-   - Siga o padrão de commits convencionais
+## 🧑‍💻 Example cURL Requests
 
-4. **Segurança**
-   - Sempre valide inputs
-   - Use autenticação JWT
-   - Implemente rate limiting em produção
-   - Mantenha as dependências atualizadas
+**Register a user:**
+```bash
+curl -X POST http://localhost:3000/api/users/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Jane Doe","email":"jane@email.com","password":"password123","role":"employer"}'
+```
 
-## 🤝 Contribuição
+**Login:**
+```bash
+curl -X POST http://localhost:3000/api/users/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"jane@email.com","password":"password123"}'
+```
 
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -m 'feat: adiciona nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
+**Get all users (admin only):**
+```bash
+curl -X GET http://localhost:3000/api/users \
+  -H "Authorization: Bearer <YOUR_ADMIN_JWT>"
+```
 
-## 📝 Licença
+**Create a company (with logo):**
+```bash
+curl -X POST http://localhost:3000/api/companies \
+  -H "Authorization: Bearer <YOUR_JWT>" \
+  -F "name=Acme Ltd" \
+  -F "location=Sydney" \
+  -F "description=Tech company" \
+  -F "logo=@/path/to/logo.png"
+```
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes. 
+**Apply to a job:**
+```bash
+curl -X POST http://localhost:3000/api/applications/<jobId>/apply \
+  -H "Authorization: Bearer <YOUR_JWT>"
+```
+
+## 📝 Developer Notes
+
+- Always use the `.env` file for sensitive configs. Never commit it to the repo.
+- Use `npx prisma studio` to browse the database visually.
+- Run `npx prisma migrate dev` to apply migrations.
+- Use `npm run dev` for hot-reload development (if available).
+- All error messages are in English (AU standard).
+- All logs are detailed for easier debugging.
+- API is ready for integration with a React frontend or other clients.
+
+## 🤝 Contributing
+
+1. Fork this repository
+2. Create a branch for your feature (`git checkout -b feature/your-feature`)
+3. Commit your changes (`git commit -m 'feat: add new feature'`)
+4. Push to your branch (`git push origin feature/your-feature`)
+5. Open a Pull Request
+
+## 📝 Licence
+
+This project is licensed under the MIT Licence. See the [LICENSE](LICENSE) file for details. 
