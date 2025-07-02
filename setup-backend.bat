@@ -1,13 +1,29 @@
 @echo off
 chcp 65001 >nul
+
+REM Habilita suporte a cores ANSI
+for /f "delims=" %%A in ('echo prompt $E ^| cmd') do set "ESC=%%A"
+
+set "COLOR_OK=%ESC%[32m"
+set "COLOR_WARN=%ESC%[33m"
+set "COLOR_ERR=%ESC%[31m"
+set "COLOR_RESET=%ESC%[0m"
+
+set STEP=0
+set TOTAL=8
+
+call :progress "Iniciando instalador..."
+
 echo ============================
-echo Instalador do Backend - Jobs Board
+echo %COLOR_OK%Instalador do Backend - Jobs Board%COLOR_RESET%
 echo ============================
 
 REM Verifica se o Chocolatey está instalado
+set /a STEP+=1
+call :progress "Verificando Chocolatey..."
 where choco >nul 2>&1
 IF %ERRORLEVEL% NEQ 0 (
-    echo [ERRO] Chocolatey nao encontrado!
+    echo %COLOR_ERR%[ERRO] Chocolatey nao encontrado!%COLOR_RESET%
     echo Para instalar, copie e cole o comando abaixo no PowerShell como Administrador:
     echo.
     echo Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
@@ -16,22 +32,29 @@ IF %ERRORLEVEL% NEQ 0 (
     pause
     exit /b 1
 )
+echo %COLOR_OK%[OK] Chocolatey encontrado!%COLOR_RESET%
 
 set RESTART_REQUIRED=0
 
-echo Instalando Node.js...
+set /a STEP+=1
+call :progress "Instalando Node.js..."
+echo %COLOR_WARN%[LOG] Instalando Node.js...%COLOR_RESET%
 choco install -y nodejs-lts
 IF %ERRORLEVEL% EQU 3010 (
     set RESTART_REQUIRED=1
 )
 
-echo Instalando Docker Desktop...
+set /a STEP+=1
+call :progress "Instalando Docker Desktop..."
+echo %COLOR_WARN%[LOG] Instalando Docker Desktop...%COLOR_RESET%
 choco install -y docker-desktop
 IF %ERRORLEVEL% EQU 3010 (
     set RESTART_REQUIRED=1
 )
 
-echo Instalando PostgreSQL...
+set /a STEP+=1
+call :progress "Instalando PostgreSQL..."
+echo %COLOR_WARN%[LOG] Instalando PostgreSQL...%COLOR_RESET%
 choco install -y postgresql
 IF %ERRORLEVEL% EQU 3010 (
     set RESTART_REQUIRED=1
@@ -39,41 +62,63 @@ IF %ERRORLEVEL% EQU 3010 (
 
 IF %RESTART_REQUIRED% EQU 1 (
     echo.
-    echo ============================
-    echo Uma ou mais instalacoes requerem que o computador seja reiniciado.
-    echo Por favor, reinicie o computador AGORA e execute este script novamente apos o reboot.
+    echo %COLOR_WARN%============================%COLOR_RESET%
+    echo %COLOR_WARN%Uma ou mais instalacoes requerem que o computador seja reiniciado.%COLOR_RESET%
+    echo %COLOR_WARN%Por favor, reinicie o computador AGORA e execute este script novamente apos o reboot.%COLOR_RESET%
     pause
     exit /b 1
 )
 
-echo Instalando dependencias do projeto (npm install)...
+set /a STEP+=1
+call :progress "Instalando dependencias do projeto (npm install)..."
+echo %COLOR_WARN%[LOG] Instalando dependencias do projeto...%COLOR_RESET%
 call npm install
 
-echo Rodando checagens finais...
+set /a STEP+=1
+call :progress "Rodando checagens finais..."
+echo %COLOR_WARN%[LOG] Rodando checagens finais...%COLOR_RESET%
 node setup-backend.js
-
 IF %ERRORLEVEL% NEQ 0 (
-    echo [ERRO] Alguma checagem falhou. Veja as mensagens acima.
+    echo %COLOR_ERR%[ERRO] Alguma checagem falhou. Veja as mensagens acima.%COLOR_RESET%
     pause
     exit /b 1
 )
 
-echo ============================
-echo Iniciando o Docker Desktop (abra manualmente se nao abrir)...
+set /a STEP+=1
+call :progress "Iniciando o Docker Desktop..."
+echo %COLOR_WARN%[LOG] Iniciando o Docker Desktop (abra manualmente se nao abrir)...%COLOR_RESET%
 start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
 
-echo Aguardando Docker Desktop inicializar...
+echo %COLOR_WARN%[LOG] Aguardando Docker Desktop inicializar...%COLOR_RESET%
 TIMEOUT /T 20
 
-echo Subindo banco de dados e backend com Docker Compose...
+set /a STEP+=1
+call :progress "Subindo banco de dados e backend com Docker Compose..."
+echo %COLOR_WARN%[LOG] Subindo banco de dados e backend...%COLOR_RESET%
 docker-compose up --build -d
 
-echo Rodando migrations do Prisma...
+set /a STEP+=1
+call :progress "Rodando migrations do Prisma..."
+echo %COLOR_WARN%[LOG] Rodando migrations do Prisma...%COLOR_RESET%
 docker exec -it express_app npx prisma migrate deploy
 
-echo Iniciando backend em modo desenvolvimento...
+echo %COLOR_OK%============================%COLOR_RESET%
+echo %COLOR_OK%Iniciando backend em modo desenvolvimento...%COLOR_RESET%
 docker exec -it express_app npm run dev
 
-echo ============================
-echo Backend rodando! Acesse http://localhost:3000
-pause 
+echo %COLOR_OK%============================%COLOR_RESET%
+echo %COLOR_OK%Backend rodando! Acesse http://localhost:3000%COLOR_RESET%
+pause
+exit /b 0
+
+:progress
+setlocal
+set "msg=%~1"
+set /a percent=(%STEP%*100)/%TOTAL%
+set "bar="
+for /l %%i in (1,1,%STEP%) do set "bar=!bar!#"
+for /l %%i in (%STEP%,1,%TOTAL%) do set "bar=!bar!_"
+set "bar=[!bar!] %percent%%"
+echo !bar! - %msg%
+endlocal
+exit /b 0 
