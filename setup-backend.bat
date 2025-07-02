@@ -4,7 +4,6 @@ cd /d "%~dp0"
 
 setlocal enabledelayedexpansion
 
-REM --- Progresso - inicializa variáveis ---
 set STEP=0
 set TOTAL=4
 
@@ -90,22 +89,38 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 
 echo ============================
-echo [OK] Todas as dependências foram instaladas!
+echo [OK] Todas as dependências do sistema foram instaladas!
 echo ============================
 
-REM --- Continuação do setup do seu projeto ---
-REM Descomente/adapte conforme necessário:
+REM --- Instala dependências do projeto Node ---
+echo [LOG] Instalando dependências do projeto (npm install)...
+call npm install
+IF %ERRORLEVEL% NEQ 0 (
+    echo [ERRO] Falha ao rodar npm install.
+    pause
+    exit /b 1
+)
 
-REM echo [LOG] Instalando dependências do projeto (npm install)...
-REM call npm install
+REM --- Sobe containers Docker ---
+echo [LOG] Subindo containers Docker (docker-compose up --build -d)...
+docker-compose up --build -d
+IF %ERRORLEVEL% NEQ 0 (
+    echo [ERRO] Falha ao subir containers Docker.
+    pause
+    exit /b 1
+)
 
-REM echo [LOG] Subindo containers Docker...
-REM docker-compose up --build -d
+REM --- Executa migrations do Prisma ---
+echo [LOG] Executando migrations do Prisma...
+docker exec -it express_app npx prisma migrate deploy
+IF %ERRORLEVEL% NEQ 0 (
+    echo [ERRO] Falha ao executar migrations do Prisma.
+    pause
+    exit /b 1
+)
 
-REM echo [LOG] Executando migrations do Prisma...
-REM docker exec -it express_app npx prisma migrate deploy
-
-REM echo [OK] Setup finalizado. Pressione qualquer tecla para sair.
+echo [OK] Setup finalizado. Backend rodando!
+echo Pressione qualquer tecla para sair.
 pause
 endlocal
 exit /b 0
