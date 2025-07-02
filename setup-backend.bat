@@ -24,11 +24,16 @@ call :progress "Verificando Chocolatey..."
 where choco >nul 2>&1
 IF %ERRORLEVEL% NEQ 0 (
     echo %COLOR_ERR%[ERRO] Chocolatey nao encontrado!%COLOR_RESET%
-    echo Para instalar, copie e cole o comando abaixo no PowerShell como Administrador:
+    echo.
+    echo %COLOR_WARN%Para instalar o Chocolatey, siga os passos abaixo:%COLOR_RESET%
+    echo 1. Um PowerShell sera aberto automaticamente como Administrador.
+    echo 2. Copie e cole o comando abaixo no PowerShell e pressione Enter:
     echo.
     echo Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
     echo.
-    echo Depois de instalar o Chocolatey, feche e abra novamente este terminal e execute este script de novo.
+    echo 3. Aguarde a instalacao terminar, feche o PowerShell e execute este script novamente.
+    echo.
+    powershell -NoExit -Command "Start-Process powershell -Verb runAs"
     pause
     exit /b 1
 )
