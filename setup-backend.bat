@@ -32,7 +32,9 @@ IF %ERRORLEVEL% NEQ 0 (
     echo 1. Um PowerShell sera aberto automaticamente como Administrador.
     echo 2. Copie e cole o comando abaixo no PowerShell e pressione Enter:
     echo.
-    echo Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]^::SecurityProtocol = [System.Net.ServicePointManager]^::SecurityProtocol -bor 3072; iex ^((New-Object System.Net.WebClient)^.DownloadString('https://community.chocolatey.org/install.ps1')^)
+    echo Set-ExecutionPolicy Bypass -Scope Process -Force; ^
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; ^
+    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
     echo.
     echo 3. Aguarde a instalacao terminar, feche o PowerShell e execute este script novamente.
     echo.
