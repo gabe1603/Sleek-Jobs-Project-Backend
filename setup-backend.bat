@@ -15,12 +15,36 @@ IF %ERRORLEVEL% NEQ 0 (
     echo Depois de instalar o Chocolatey, feche e abra novamente este terminal e execute este script de novo.
     pause
     exit /b 1
-) ELSE (
-    echo [OK] Chocolatey encontrado!
 )
 
-echo Instalando Node.js, Docker Desktop e PostgreSQL...
-choco install -y nodejs-lts docker-desktop postgresql
+set RESTART_REQUIRED=0
+
+echo Instalando Node.js...
+choco install -y nodejs-lts
+IF %ERRORLEVEL% EQU 3010 (
+    set RESTART_REQUIRED=1
+)
+
+echo Instalando Docker Desktop...
+choco install -y docker-desktop
+IF %ERRORLEVEL% EQU 3010 (
+    set RESTART_REQUIRED=1
+)
+
+echo Instalando PostgreSQL...
+choco install -y postgresql
+IF %ERRORLEVEL% EQU 3010 (
+    set RESTART_REQUIRED=1
+)
+
+IF %RESTART_REQUIRED% EQU 1 (
+    echo.
+    echo ============================
+    echo Uma ou mais instalacoes requerem que o computador seja reiniciado.
+    echo Por favor, reinicie o computador AGORA e execute este script novamente apos o reboot.
+    pause
+    exit /b 1
+)
 
 echo Instalando dependencias do projeto (npm install)...
 call npm install
