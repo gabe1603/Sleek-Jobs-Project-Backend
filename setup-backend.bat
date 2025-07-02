@@ -1,7 +1,10 @@
 @echo off
 chcp 65001 >nul
 
-REM Habilita suporte a cores ANSI
+REM Garante que está na pasta do script
+cd /d "%~dp0"
+
+REM Habilita suporte a cores ANSI (pode não funcionar em CMD antigo)
 for /f "delims=" %%A in ('echo prompt $E ^| cmd') do set "ESC=%%A"
 
 set "COLOR_OK=%ESC%[32m"
@@ -29,7 +32,7 @@ IF %ERRORLEVEL% NEQ 0 (
     echo 1. Um PowerShell sera aberto automaticamente como Administrador.
     echo 2. Copie e cole o comando abaixo no PowerShell e pressione Enter:
     echo.
-    echo Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+    echo Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]^::SecurityProtocol = [System.Net.ServicePointManager]^::SecurityProtocol -bor 3072; iex ^((New-Object System.Net.WebClient)^.DownloadString('https://community.chocolatey.org/install.ps1')^)
     echo.
     echo 3. Aguarde a instalacao terminar, feche o PowerShell e execute este script novamente.
     echo.
@@ -48,6 +51,12 @@ choco install -y nodejs-lts
 IF %ERRORLEVEL% EQU 3010 (
     set RESTART_REQUIRED=1
 )
+where node >nul 2>&1
+IF %ERRORLEVEL% NEQ 0 (
+    echo %COLOR_ERR%[ERRO] Node.js não foi instalado corretamente.%COLOR_RESET%
+    pause
+    exit /b 1
+)
 
 set /a STEP+=1
 call :progress "Instalando Docker Desktop..."
@@ -57,12 +66,24 @@ IF %ERRORLEVEL% EQU 3010 (
     set RESTART_REQUIRED=1
 )
 
+where docker >nul 2>&1
+IF %ERRORLEVEL% NEQ 0 (
+    echo %COLOR_ERR%[ERRO] Docker não foi instalado corretamente.%COLOR_RESET%
+    pause
+    exit /b 1
+)
+
 set /a STEP+=1
 call :progress "Instalando PostgreSQL..."
 echo %COLOR_WARN%[LOG] Instalando PostgreSQL...%COLOR_RESET%
 choco install -y postgresql
 IF %ERRORLEVEL% EQU 3010 (
     set RESTART_REQUIRED=1
+)
+
+where psql >nul 2>&1
+IF %ERRORLEVEL% NEQ 0 (
+    echo %COLOR_WARN%[AVISO] PostgreSQL não encontrado no PATH. Se usar somente o container, ignore este aviso.%COLOR_RESET%
 )
 
 IF %RESTART_REQUIRED% EQU 1 (
@@ -78,6 +99,11 @@ set /a STEP+=1
 call :progress "Instalando dependencias do projeto (npm install)..."
 echo %COLOR_WARN%[LOG] Instalando dependencias do projeto...%COLOR_RESET%
 call npm install
+IF %ERRORLEVEL% NEQ 0 (
+    echo %COLOR_ERR%[ERRO] Falha ao rodar npm install. Verifique o log acima.%COLOR_RESET%
+    pause
+    exit /b 1
+)
 
 set /a STEP+=1
 call :progress "Rodando checagens finais..."
@@ -94,18 +120,42 @@ call :progress "Iniciando o Docker Desktop..."
 echo %COLOR_WARN%[LOG] Iniciando o Docker Desktop (abra manualmente se nao abrir)...%COLOR_RESET%
 start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
 
-echo %COLOR_WARN%[LOG] Aguardando Docker Desktop inicializar...%COLOR_RESET%
-TIMEOUT /T 20
+REM Aguarda o Docker Desktop estar pronto (em vez de timeout fixo)
+:wait_docker
+docker info >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo %COLOR_WARN%[LOG] Aguardando Docker Desktop ficar pronto...%COLOR_RESET%
+    timeout /t 5
+    goto wait_docker
+)
 
 set /a STEP+=1
 call :progress "Subindo banco de dados e backend com Docker Compose..."
 echo %COLOR_WARN%[LOG] Subindo banco de dados e backend...%COLOR_RESET%
 docker-compose up --build -d
+IF %ERRORLEVEL% NEQ 0 (
+    echo %COLOR_ERR%[ERRO] Falha ao subir containers com Docker Compose. Veja o log acima.%COLOR_RESET%
+    pause
+    exit /b 1
+)
+
+REM Checa se o container backend subiu corretamente
+docker ps | findstr express_app >nul 2>&1
+IF %ERRORLEVEL% NEQ 0 (
+    echo %COLOR_ERR%[ERRO] Container do backend (express_app) não está rodando.%COLOR_RESET%
+    pause
+    exit /b 1
+)
 
 set /a STEP+=1
 call :progress "Rodando migrations do Prisma..."
 echo %COLOR_WARN%[LOG] Rodando migrations do Prisma...%COLOR_RESET%
 docker exec -it express_app npx prisma migrate deploy
+IF %ERRORLEVEL% NEQ 0 (
+    echo %COLOR_ERR%[ERRO] Falha ao rodar migrations do Prisma. Veja o log acima.%COLOR_RESET%
+    pause
+    exit /b 1
+)
 
 echo %COLOR_OK%============================%COLOR_RESET%
 echo %COLOR_OK%Iniciando backend em modo desenvolvimento...%COLOR_RESET%
@@ -117,7 +167,7 @@ pause
 exit /b 0
 
 :progress
-setlocal
+setlocal EnableDelayedExpansion
 set "msg=%~1"
 set /a percent=(%STEP%*100)/%TOTAL%
 set "bar="
@@ -126,4 +176,4 @@ for /l %%i in (%STEP%,1,%TOTAL%) do set "bar=!bar!_"
 set "bar=[!bar!] %percent%%"
 echo !bar! - %msg%
 endlocal
-exit /b 0 
+exit /b 0
