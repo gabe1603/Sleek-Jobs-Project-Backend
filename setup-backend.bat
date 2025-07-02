@@ -47,7 +47,8 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 where node >nul 2>&1
 IF %ERRORLEVEL% NEQ 0 (
-    echo [ERRO] Node.js não foi instalado corretamente.
+    echo [AVISO] Node.js foi instalado, mas ainda não está disponível neste terminal.
+    echo Feche esta janela e execute o script novamente!
     pause
     exit /b 1
 )
@@ -65,28 +66,33 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 where docker >nul 2>&1
 IF %ERRORLEVEL% NEQ 0 (
-    echo [ERRO] Docker não foi instalado corretamente.
+    echo [AVISO] Docker Desktop foi instalado, mas ainda não está disponível neste terminal.
+    echo [IMPORTANTE] Reinicie o computador e execute o script novamente para continuar.
     pause
     exit /b 1
 )
 echo [OK] Docker Desktop instalado!
 
-REM --- 4. Instala PostgreSQL ---
+REM --- 4. Checa e atualiza o WSL ---
 set /a STEP+=1
-call :progress "Instalando PostgreSQL..."
-echo [LOG] Instalando PostgreSQL...
-choco install -y postgresql
+call :progress "Checando e atualizando o WSL..."
+where wsl >nul 2>&1
 IF %ERRORLEVEL% NEQ 0 (
-    echo [ERRO] Falha ao instalar o PostgreSQL.
+    echo [ERRO] O WSL não está instalado. Instale o WSL2 antes de prosseguir.
+    echo Execute: wsl --install
+    echo Veja mais detalhes em: https://aka.ms/wslstore
     pause
     exit /b 1
 )
-where psql >nul 2>&1
+echo [LOG] Atualizando o WSL...
+wsl --update
 IF %ERRORLEVEL% NEQ 0 (
-    echo [AVISO] PostgreSQL não encontrado no PATH. Se usar somente o container, ignore este aviso.
-) ELSE (
-    echo [OK] PostgreSQL instalado!
+    echo [ERRO] Falha ao atualizar o WSL.
+    echo Tente atualizar manualmente pelo comando: wsl --update
+    pause
+    exit /b 1
 )
+echo [OK] WSL atualizado!
 
 echo ============================
 echo [OK] Todas as dependências do sistema foram instaladas!
