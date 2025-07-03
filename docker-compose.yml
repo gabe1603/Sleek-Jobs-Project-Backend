@@ -22,7 +22,7 @@ services:
     container_name: express_app
     ports:
       - "3000:3000"
-      - "5555:5555"
+      - "5555:5555"    # Só se usar Prisma Studio
     depends_on:
       - postgres
     environment:
@@ -33,6 +33,7 @@ services:
       - /usr/src/app/node_modules
     networks:
       - app-network
+    # command: sh -c "npx prisma migrate deploy && npm run dev" # Descomente se quiser aplicar migrations automáticas
 
 volumes:
   postgres_data:

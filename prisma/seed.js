@@ -28,8 +28,8 @@ async function main() {
   const employer = await prisma.user.create({
     data: {
       name: 'Example Company',
-      email: 'empresa@jobhub.com',
-      password: hash('empresa123'),
+      email: 'company@jobhub.com',
+      password: hash('company123'),
       role: 'employer',
       abn: '12312312312',
       avatar: './uploads/employer.jpg'
@@ -39,7 +39,7 @@ async function main() {
   const candidate = await prisma.user.create({
     data: {
       name: 'Test Candidate',
-      email: 'candidato@jobhub.com',
+      email: 'user@jobhub.com',
       password: hash('user123'),
       role: 'student',
       avatar: './uploads/student.jpg'

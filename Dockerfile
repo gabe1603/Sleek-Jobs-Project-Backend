@@ -1,6 +1,5 @@
 FROM node:18-slim
 
-# Instala o OpenSSL necessário para o Prisma funcionar corretamente
 RUN apt-get update && apt-get install -y openssl
 
 WORKDIR /usr/src/app
@@ -10,6 +9,7 @@ RUN npm install
 
 COPY . .
 
+# Garante que o prisma/schema.prisma está presente
 RUN npx prisma generate
 
 EXPOSE 3000
