@@ -9,7 +9,7 @@ RUN npm install
 
 COPY . .
 
-# Garante que o prisma/schema.prisma está presente
+RUN chmod -R +x ./node_modules/.bin
 RUN npx prisma generate
 
 EXPOSE 3000
